@@ -1,12 +1,15 @@
 Require Vectors.Vector.
 Require Vectors.Fin.
-Import Vector.VectorNotations.
+Import Vector.
 
-(*Right now assume all message types are nat*)
-Inductive SessionType : Type := 
+Inductive MessageType : Type :=
+| Base : nat -> MessageType
+| Channel : SessionType -> MessageType
+
+with SessionType : Type := 
   | End : SessionType
-  | Send : nat -> SessionType -> SessionType
-  | Rece : nat -> SessionType -> SessionType
+  | Send : MessageType -> SessionType -> SessionType
+  | Rece : MessageType -> SessionType -> SessionType
   | Choose : forall {n}, Vector.t SessionType n -> SessionType
   | Offer : forall {n}, Vector.t SessionType n -> SessionType
 .
@@ -20,7 +23,5 @@ Definition testST (st : SessionType) : SessionType :=
   | Offer ss => End
   end.
 
-Compute testST (Send 5 (Send 6 End)).
-Compute testST (Rece 7 (Rece 8 End)). 
-
-
+Compute testST (Send (Base 5) (Send (Base 6) End)).
+Compute testST (Rece (Base 50) (Rece (Base 60) End)). 
