@@ -11,7 +11,8 @@ with SessionType : Type :=
   | Send : MessageType -> SessionType -> SessionType
   | Rece : MessageType -> SessionType -> SessionType
   | Choose : SessionType -> SessionType -> SessionType
-  | Offer : forall {n}, Vector.t SessionType n -> SessionType
+  | Offer : SessionType -> SessionType -> SessionType
+  (* | Offer : forall {n}, Vector.t SessionType n -> SessionType *)
 .
 
 Definition testST (st : SessionType) : SessionType :=
@@ -20,27 +21,34 @@ Definition testST (st : SessionType) : SessionType :=
   | Send m s => s
   | Rece m s => s
   | Choose a b => a
-  | Offer ss => End
+  | Offer a b => End
   end.
 
 Compute testST (Send (Base nat) (Send (Base nat) End)).
 Compute testST (Rece (Base nat) (Rece (Base nat) End)). 
-Compute testST (Choose End End). 
-
+Compute testST (Choose (Send (Base nat) End) End). 
+Compute testST (Offer (Choose (Send (Base nat) End) End) (Send (Base nat) (Send (Base nat) End))).
 
 (*ATM example: https://stanford-cs242.github.io/f18/lectures/07-2-session-types.html#session-type-formalism*)
 
 (*As far as I understand, SessionType does not require explicit implementation such as checking balance or
 update account balance. All we implement is just ``TYPE``, which is a high level abstract *)
 
-Definition ATMDeposit (amount : nat) : SessionType :=
+Definition ATMDeposit : SessionType :=
   Rece (Base nat) (Send (Base nat) End)
 .
 
-Compute ATMDeposit 100.
+Compute ATMDeposit.
 
-Definition ATMWithdraw (amount : nat) : SessionType :=
+Definition ATMWithdraw : SessionType :=
   Rece (Base nat) (Choose End End)
 .
 
-Compute ATMWithdraw 10.
+Compute ATMWithdraw.
+
+Definition ATMServer : SessionType :=
+  Rece (Base nat) (Choose (Offer ATMDeposit ATMWithdraw) (End))
+.
+
+Compute ATMServer. 
+
