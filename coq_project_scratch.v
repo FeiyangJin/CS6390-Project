@@ -4,6 +4,7 @@ Import Vector.
 
 Inductive MessageType : Type :=
 | Base : Type -> MessageType
+| natBase : nat -> MessageType
 | Channel : SessionType -> MessageType
 
 with SessionType : Type := 
@@ -51,4 +52,66 @@ Definition ATMServer : SessionType :=
 .
 
 Compute ATMServer. 
+
+
+(* The following is the atm example implemented by intuition. *)
+
+
+Definition balance: nat := 100.
+
+(* TODO: figure out how to update balance*)
+Definition atmdeposit (amount : nat) : SessionType :=
+  Send (natBase (amount + balance)) End
+.
+
+Compute atmdeposit 200.
+
+Fixpoint leb (n m : nat) : bool :=
+  match n with
+  | O => true
+  | S n' =>
+      match m with
+      | O => false
+      | S m' => leb n' m'
+      end
+  end.
+
+(* TODO: figure out how to update balance*)
+Definition atmwithdraw (amount : nat) : SessionType :=
+  match (leb amount balance) with
+  | true =>  End
+  | false => End
+  end
+.
+
+(* TODO: figure out how to Offer the other version*)
+Definition checkid (id : nat) : SessionType :=
+  match id with 
+  | 0 => End
+  | S n => (Offer ATMDeposit ATMWithdraw)
+  end.
+
+Definition testid : nat := 55.
+Definition testamount : nat := 40.
+
+(* TODO: 
+  1. how to print
+  2. how to read user input
+  3. how to organize this as a real session type application *)
+Definition atmserver (id choice amount : nat) : SessionType :=
+  match (checkid id) with 
+  | End => End
+  | (Offer deposit withdraw) => 
+      match choice with
+      | 0 => (* go left *) match (atmdeposit amount) with 
+                           | Send a b => (* TODO: how to print the updated balance here*) End
+                           | _ => End
+                           end
+      | S n => (* go right *) (atmwithdraw amount)
+      end
+  | _ => End
+  end
+. 
+
+
 
