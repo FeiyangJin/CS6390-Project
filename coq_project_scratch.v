@@ -13,6 +13,7 @@ with SessionType : Type :=
   | Rece : MessageType -> SessionType -> SessionType
   | Choose : SessionType -> SessionType -> SessionType
   | Offer : SessionType -> SessionType -> SessionType
+  | atmoffer : (nat -> SessionType) -> (nat -> SessionType) -> SessionType
   (* | Offer : forall {n}, Vector.t SessionType n -> SessionType *)
 .
 
@@ -23,6 +24,7 @@ Definition testST (st : SessionType) : SessionType :=
   | Rece m s => s
   | Choose a b => a
   | Offer a b => End
+  | atmoffer a b => a 0
   end.
 
 Compute testST (Send (Base nat) (Send (Base nat) End)).
@@ -59,6 +61,7 @@ Compute ATMServer.
 
 Definition balance: nat := 100.
 
+
 (* TODO: figure out how to update balance*)
 Definition atmdeposit (amount : nat) : SessionType :=
   Send (natBase (amount + balance)) End
@@ -84,15 +87,17 @@ Definition atmwithdraw (amount : nat) : SessionType :=
   end
 .
 
-(* TODO: figure out how to Offer the other version*)
+
 Definition checkid (id : nat) : SessionType :=
   match id with 
   | 0 => End
-  | S n => (Offer ATMDeposit ATMWithdraw)
+  | S n => (atmoffer atmdeposit atmwithdraw)
+  (* | S n => (Offer ATMDeposit ATMWithdraw) *)
   end.
 
 Definition testid : nat := 55.
 Definition testamount : nat := 40.
+
 
 (* TODO: 
   1. how to print
@@ -100,18 +105,20 @@ Definition testamount : nat := 40.
   3. how to organize this as a real session type application *)
 Definition atmserver (id choice amount : nat) : SessionType :=
   match (checkid id) with 
-  | End => End
-  | (Offer deposit withdraw) => 
+  | (atmoffer deposit withdraw) => 
       match choice with
-      | 0 => (* go left *) match (atmdeposit amount) with 
+      | 0 => (* go left *) match (deposit amount) with 
                            | Send a b => (* TODO: how to print the updated balance here*) End
                            | _ => End
                            end
-      | S n => (* go right *) (atmwithdraw amount)
+      | S n => (* go right *) (withdraw amount)
       end
   | _ => End
   end
-. 
+.
+
+Compute atmserver 100 0 50.
+
 
 
 
