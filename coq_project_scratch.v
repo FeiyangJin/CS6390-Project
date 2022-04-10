@@ -55,6 +55,10 @@ Definition ATMServer : SessionType :=
 
 Compute ATMServer. 
 
+(* Client Duality *)
+Definition ClientServer : SessionType := 
+  Send (Base nat) (Offer (Choose (Offer ATMDeposit ATMWithdraw) End) End)
+.
 
 (* The following is the atm example implemented by intuition. *)
 
@@ -95,10 +99,6 @@ Definition checkid (id : nat) : SessionType :=
   (* | S n => (Offer ATMDeposit ATMWithdraw) *)
   end.
 
-Definition testid : nat := 55.
-Definition testamount : nat := 40.
-
-
 (* TODO: 
   1. how to print
   2. how to read user input
@@ -117,8 +117,13 @@ Definition atmserver (id choice amount : nat) : SessionType :=
   end
 .
 
-Compute atmserver 100 0 50.
+Definition testid : nat := 55.
+Definition testamount : nat := 40.
+Compute atmserver testid 0 testamount.
 
 
+Definition client_atmserver (id choice amount : nat) : SessionType :=
+  atmserver id choice amount
+.
 
 
