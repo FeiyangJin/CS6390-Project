@@ -15,6 +15,10 @@ with SessionType : Type :=
   | Offer : SessionType -> SessionType -> SessionType
   | atmoffer : (nat -> SessionType) -> (nat -> SessionType) -> SessionType
   (* | Offer : forall {n}, Vector.t SessionType n -> SessionType *)
+  | Mu : RecSessionType -> SessionType
+
+with RecSessionType : Type :=
+  RecTerm : SessionType -> RecSessionType
 .
 
 Definition testST (st : SessionType) : SessionType :=
@@ -25,12 +29,17 @@ Definition testST (st : SessionType) : SessionType :=
   | Choose a b => a
   | Offer a b => End
   | atmoffer a b => a 0
+  | Mu t => End
   end.
+
+(*Fixpoint rr (t: SessionType) : RecSessionType :=
+  Choose ((Send () rr) Ebd) *)
 
 Compute testST (Send (Base nat) (Send (Base nat) End)).
 Compute testST (Rece (Base nat) (Rece (Base nat) End)). 
 Compute testST (Choose (Send (Base nat) End) End). 
 Compute testST (Offer (Choose (Send (Base nat) End) End) (Send (Base nat) (Send (Base nat) End))).
+Compute testST (Mu (RecTerm  End)).
 
 (*ATM example: https://stanford-cs242.github.io/f18/lectures/07-2-session-types.html#session-type-formalism*)
 
@@ -54,6 +63,20 @@ Definition ATMServer : SessionType :=
 .
 
 Compute ATMServer. 
+
+(* Recursion ATM *)
+(* An ATM run at most n times *)
+Fixpoint ATMServer' (n: nat) : SessionType :=
+  match n with
+  | O => End
+  | S m => let ATMDeposit' : SessionType :=
+             Rece (Base nat) (Send (Base nat) (ATMServer' m)) in 
+           let ATMWithdraw' : SessionType :=
+             Rece (Base nat) (Choose (ATMServer' m) (ATMServer' m)) in
+           Rece (Base nat) (Mu (RecTerm (Offer ATMDeposit' (Offer ATMWithdraw' End))))
+  end.
+
+Compute ATMServer'. 
 
 (* Client Duality *)
 Definition ClientServer : SessionType := 
