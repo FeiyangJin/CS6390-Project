@@ -153,7 +153,7 @@ let atmServerSession () : sessionType =
                     (
                       match nextSession with
                       | Send (m,s) -> 
-                        let () = Printf.printf "Enter the amount you want to deposit: " in
+                        let () = Printf.printf "atmServer: Enter the amount you want to deposit: " in
                         let e4 = Event.send atmChannel (Rece (IntBase (-1), (Send (IntBase (-1), End)))) in
                           Event.sync e4;
 
@@ -165,19 +165,46 @@ let atmServerSession () : sessionType =
                           (
                             match intmessage with
                             | IntBase (amount) -> 
-                            let () = Printf.printf "atmServer: you deposit amount is %d \n" amount in
-                            let oldbalance = (get_balance bank id) in 
-                            let newbalance = amount + oldbalance in
-                            let () = (update_balance bank id newbalance) in
-                            let e6 = Event.send atmChannel (Send ((IntBase (newbalance), End))) in
-                            Event.sync e6; 
-                            End
+                              let () = Printf.printf "atmServer: you deposit amount is %d \n" amount in
+                              let oldbalance = (get_balance bank id) in 
+                              let newbalance = amount + oldbalance in
+                              let () = (update_balance bank id newbalance) in
+                              let e6 = Event.send atmChannel (Send ((IntBase (newbalance), End))) in
+                              Event.sync e6; 
+                              End
                             | _ -> let () = Printf.printf "atmServer: Error. Session ends \n " in End
                           ) 
                           | _ -> let () = Printf.printf "atmServer: Error. Session ends \n " in End
                         )
-                      | Choose (a,b) -> let () = Printf.printf "atmServer: You choose to withdraw \n " in End
-                      (* TODO *)
+                      | Choose (a,b) -> let () = Printf.printf "atmServer: Enter the amount you want to withdraw: " in
+                        let e7 = Event.send atmChannel (Rece (IntBase (-1), (Send (IntBase (-1), End)))) in
+                          Event.sync e7;
+
+                        let e8 = Event.receive atmChannel in
+                        let withdrawlResponse = Event.sync e8 in
+                        (
+                          match withdrawlResponse with
+                          | Send (intmessage, nexts) ->
+                          (
+                            match intmessage with
+                            | IntBase (amount) -> 
+                              let () = Printf.printf "atmServer: you withdraw amount is %d \n" amount in
+                              let oldbalance = (get_balance bank id) in
+                              if oldbalance < amount then
+                                let () = Printf.printf "atmServer: You do not have enough balance. Session ends \n " in
+                                let e9 = Event.send atmChannel End in 
+                                Event.sync e9; 
+                                End
+                              else
+                                let newbalance = oldbalance - amount in
+                                let () = (update_balance bank id newbalance) in
+                                let e9 = Event.send atmChannel (Send ((IntBase (newbalance), End))) in
+                                Event.sync e9; 
+                                End
+                            | _ -> let () = Printf.printf "atmServer: Error. Session ends \n " in End
+                          )
+                          | _ -> let () = Printf.printf "atmServer: Error. Session ends \n " in End
+                        )
                       | _ -> let () = Printf.printf "atmServer: Error. Session ends \n " in End
                     )
                     | _ -> let () = Printf.printf "atmServer: Error. Session ends \n " in End
@@ -235,7 +262,33 @@ let clientServerSession () : sessionType =
         | _ -> let () = Printf.printf "clientServer: Error. Session Ends \n" in End
       else
         let e3 = Event.send atmChannel (Choose (withdraw,End)) in 
-        Event.sync e3; End
+        Event.sync e3;
+
+        let e7 = Event.receive atmChannel in
+        let atmWithdrawRequest = Event.sync e7 in
+        (
+          match atmWithdrawRequest with
+          | Rece (m,s) ->
+            let amount = read_int() in
+            let e8 = Event.send atmChannel (Send (IntBase (amount), End)) in
+            Event.sync e8;
+
+            let e9 = Event.receive atmChannel in
+            let newbalanceSession = Event.sync e9 in
+            (
+              match newbalanceSession with
+              | End -> End
+              | Send (newblanceMessage, endSession) ->
+              (
+                match newblanceMessage with
+                | IntBase (newbalance) ->
+                  let () = Printf.printf "clientServer: your new balance is %d. Session Ends \n" newbalance in endSession
+                | _ -> let () = Printf.printf "clientServer: Error. Session Ends \n" in End
+              )
+              | _ -> let () = Printf.printf "clientServer: Error. Session Ends \n" in End
+            )
+          | _ -> let () = Printf.printf "clientServer: Error. Session Ends \n" in End
+        )  
     | _ -> let () = Printf.printf "clientServer: Error. Session Ends \n" in End  
 ;;
 
