@@ -1,6 +1,10 @@
 (* Author: Feiyang Jin
 Contact: fjin35@gatech.edu *)
 
+(*To build this file, use the following command:
+ocamlc -thread -I +threads unix.cma threads.cma ocaml-submission.ml
+*)
+
 let bank = [(1, ref 999); (2, ref 888); (3, ref 777)] ;;
 
 let rec user_in_bank (l : (int * int ref) list) (user_id : int) : bool = 
